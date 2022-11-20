@@ -1,0 +1,113 @@
+﻿<Window x:Class="SmokeyVersionSwitcher.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SmokeyVersionSwitcher"
+        mc:Ignorable="d"
+        Title="SmokeyStack's Version Switcher" Height="800" Width="800">
+    <Window.Resources>
+        <DataTemplate x:Key="templateVersionNotInstalled" DataType="{x:Type local:Foo}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Path=Section}" FontWeight="Bold" />
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="templateVersionInstalled" DataType="{x:Type local:Foo}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Path=Section}" FontWeight="Bold" />
+            </Grid>
+        </DataTemplate>
+        <DataTemplate x:Key="templateVersionDownloading" DataType="{x:Type local:Foo}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Path=Section}" FontWeight="Bold" />
+            </Grid>
+        </DataTemplate>
+        <ControlTemplate x:Key="templateVersionList" TargetType="ContentControl">
+            <ListBox ItemsSource="{Binding}" HorizontalContentAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <ContentControl x:Name="control" Content="{Binding}" ContentTemplate="{StaticResource templateVersionNotInstalled}" Background="LightBlue"/>
+
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding IsInstalled}" Value="True">
+                                <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionInstalled}"/>
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding IsStateChanging}" Value="True">
+                                <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionDownloading}"/>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </ControlTemplate>
+    </Window.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0" IsMainMenu="True" Background="Transparent">
+            <!--<MenuItem Header="_File">
+                <MenuItem Header="Open log file" Click="MenuItemOpenLogFileClicked" />
+                <MenuItem Header="Open launcher data folder in Explorer" Click="MenuItemOpenDataDirClicked"/>
+                <MenuItem Header="_Import APPX file" Click="ImportButtonClicked" />
+            </MenuItem>-->
+            <!--<MenuItem Header="_Options">
+                <MenuItem Header="Delete APPX after download to save space" IsCheckable="True" Name="DeleteAppxAfterDownloadOption" Checked="DeleteAppxAfterDownloadCheck_Changed" Unchecked="DeleteAppxAfterDownloadCheck_Changed" IsChecked="{Binding UserPrefs.DeleteAppxAfterDownload }" />
+                <MenuItem Header="Uninstall all versions" Name="CleanupForMicrosoftStoreReinstall" Click="MenuItemCleanupForMicrosoftStoreReinstallClicked" />
+                <MenuItem Header="Refresh version list" Name="RefreshVersionList" Click="MenuItemRefreshVersionListClicked" />
+            </MenuItem>-->
+        </Menu>
+        <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
+            <TabItem Header="Play">
+                <!--<ContentControl x:Name="ReleaseVersionList" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />-->
+            </TabItem>
+            <TabItem Header="Installations">
+                <ContentControl x:Name="BetaVersionList" Template="{StaticResource templateVersionList}" Margin="5" />
+            </TabItem>
+        </TabControl>
+
+        <Grid Grid.Row="2" VerticalAlignment="Center" Margin="5,5,5,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <!--<CheckBox Grid.Row="0" Grid.Column="0" Name="ShowInstalledVersionsOnlyCheckbox" Content="Show installed versions only" Checked="ShowInstalledVersionsOnlyCheckbox_Changed" Unchecked="ShowInstalledVersionsOnlyCheckbox_Changed" IsChecked="{Binding UserPrefs.ShowInstalledOnly }" />-->
+            <Grid Name="LoadingProgressGrid" Grid.Row="0" Grid.Column="2">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Label Grid.Row="0" Grid.Column="0" Name="LoadingProgressLabel" Content="Nothing" Padding="0,0,0,0"/>
+                <ProgressBar Grid.Row="0" Grid.Column="1" Name="LoadingProgressBar" Width="100" Margin="5,0,0,0" Maximum="3" Value="2"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
