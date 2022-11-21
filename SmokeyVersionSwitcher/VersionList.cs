@@ -20,11 +20,9 @@ namespace SmokeyVersionSwitcher
         private void ParseList(JArray data)
         {
             Clear();
-            // ([name, uuid, isBeta])[]
+
             foreach (JObject keys in data)
-            {
-                Add(new WPFDataTypes.Version((string)keys["Name"], (string)keys["Type"], _commands));
-            }
+                Add(new WPFDataTypes.Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], _commands));
         }
 
         public async Task LoadFromCache()

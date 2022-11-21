@@ -11,7 +11,6 @@ namespace SmokeyVersionSwitcher
     /// </summary>
     public class RelayCommand : ICommand
     {
-
         readonly Action<object> _execute;
         readonly Predicate<object> _canExecute;
 
@@ -37,7 +36,7 @@ namespace SmokeyVersionSwitcher
         [DebuggerStepThrough]
         public bool CanExecute(object parameters)
         {
-            return _canExecute == null ? true : _canExecute(parameters);
+            return _canExecute == null || _canExecute(parameters);
         }
 
         public event EventHandler CanExecuteChanged

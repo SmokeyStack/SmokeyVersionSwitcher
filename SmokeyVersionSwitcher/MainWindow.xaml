@@ -33,6 +33,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition />
@@ -40,14 +41,14 @@
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold">
                     <TextBlock.Text>
-                        <MultiBinding StringFormat="{}{0} ({1})">
+                        <MultiBinding StringFormat="{}{0} UwU ({1})">
                             <Binding Path="Name"/>
                             <Binding Path="Type"/>
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <Button x:Name="LaunchButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Launch" Command="{Binding LaunchCommand}" CommandParameter="{Binding}" />
                 <Button x:Name="UninstallButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Uninstall" Command="{Binding UninstallCommand}" CommandParameter="{Binding}" />
+                <Button x:Name="DownloadButton" Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Padding="20,0" Content="Launch" Command="{Binding LaunchCommand}" CommandParameter="{Binding}" />
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="templateVersionDownloading" DataType="{x:Type local:Version}">
@@ -59,6 +60,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition />
                     <RowDefinition />
+                    <RowDefinition />
                 </Grid.RowDefinitions>
                 <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold">
                     <TextBlock.Text>
@@ -68,6 +70,10 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
+                <Canvas Name="progressSizeHack" Grid.Row="2" Grid.Column="0" Height="12">
+                    <ProgressBar Width="{Binding Path=ActualWidth, ElementName=progressSizeHack, Mode=OneWay}" Height="{Binding Path=ActualHeight, ElementName=progressSizeHack, Mode=OneWay}" Minimum="0" Maximum="{Binding DownloadInfo.TotalSize}" Value="{Binding DownloadInfo.DownloadedBytes}" IsIndeterminate="{Binding DownloadInfo.IsProgressIndeterminate}" />
+                </Canvas>
+                <Button Grid.Row="2" Grid.Column="1" Content="X" Width="20" Margin="10 0 0 0" Command="{Binding DownloadInfo.CancelCommand}" />
             </Grid>
         </DataTemplate>
         <ControlTemplate x:Key="templateVersionList" TargetType="ContentControl">
@@ -80,7 +86,7 @@
                             <DataTrigger Binding="{Binding IsInstalled}" Value="True">
                                 <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionInstalled}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding IsStateChanging}" Value="True">
+                            <DataTrigger Binding="{Binding IsDownloading}" Value="True">
                                 <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionDownloading}"/>
                             </DataTrigger>
                         </DataTemplate.Triggers>
@@ -95,18 +101,17 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <!--<Menu Grid.Row="0" IsMainMenu="True" Background="Transparent">
+        <Menu Grid.Row="0" IsMainMenu="True" Background="Transparent">
             <MenuItem Header="_File">
                 <MenuItem Header="Open log file" Click="MenuItemOpenLogFileClicked" />
                 <MenuItem Header="Open launcher data folder in Explorer" Click="MenuItemOpenDataDirClicked"/>
-                <MenuItem Header="_Import APPX file" Click="ImportButtonClicked" />
             </MenuItem>
-            <MenuItem Header="_Options">
+            <!--<MenuItem Header="_Options">
                 <MenuItem Header="Delete APPX after download to save space" IsCheckable="True" Name="DeleteAppxAfterDownloadOption" Checked="DeleteAppxAfterDownloadCheck_Changed" Unchecked="DeleteAppxAfterDownloadCheck_Changed" IsChecked="{Binding UserPrefs.DeleteAppxAfterDownload }" />
                 <MenuItem Header="Uninstall all versions" Name="CleanupForMicrosoftStoreReinstall" Click="MenuItemCleanupForMicrosoftStoreReinstallClicked" />
                 <MenuItem Header="Refresh version list" Name="RefreshVersionList" Click="MenuItemRefreshVersionListClicked" />
-            </MenuItem>
-        </Menu>-->
+            </MenuItem>-->
+        </Menu>
         <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
             <TabItem Header="Play">
                 <!--<ContentControl x:Name="ReleaseVersionList" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />-->
@@ -115,6 +120,8 @@
                 <ContentControl x:Name="VersionList" Template="{StaticResource templateVersionList}" Margin="5" />
             </TabItem>
         </TabControl>
+
+
 
         <Grid Grid.Row="2" VerticalAlignment="Center" Margin="5,5,5,10">
             <Grid.ColumnDefinitions>
