@@ -17,7 +17,14 @@
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Path=Section}" FontWeight="Bold" />
+                <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} ({1})">
+                            <Binding Path="Name"/>
+                            <Binding Path="Type"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="templateVersionInstalled" DataType="{x:Type local:Foo}">
@@ -30,7 +37,14 @@
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Path=Section}" FontWeight="Bold" />
+                <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} ({1})">
+                            <Binding Path="Name"/>
+                            <Binding Path="Type"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="templateVersionDownloading" DataType="{x:Type local:Foo}">
@@ -43,7 +57,14 @@
                     <RowDefinition />
                     <RowDefinition />
                 </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Path=Section}" FontWeight="Bold" />
+                <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} ({1})">
+                            <Binding Path="Name"/>
+                            <Binding Path="Type"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
             </Grid>
         </DataTemplate>
         <ControlTemplate x:Key="templateVersionList" TargetType="ContentControl">
@@ -60,7 +81,6 @@
                                 <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionDownloading}"/>
                             </DataTrigger>
                         </DataTemplate.Triggers>
-
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -89,7 +109,7 @@
                 <!--<ContentControl x:Name="ReleaseVersionList" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />-->
             </TabItem>
             <TabItem Header="Installations">
-                <ContentControl x:Name="BetaVersionList" Template="{StaticResource templateVersionList}" Margin="5" />
+                <ContentControl x:Name="VersionList" Template="{StaticResource templateVersionList}" Margin="5" />
             </TabItem>
         </TabControl>
 
