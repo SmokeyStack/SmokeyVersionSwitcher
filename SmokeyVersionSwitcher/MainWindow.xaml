@@ -3,11 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SmokeyVersionSwitcher"
+        xmlns:local="clr-namespace:SmokeyVersionSwitcher.WPFDataTypes"
         mc:Ignorable="d"
         Title="SmokeyStack's Version Switcher" Height="800" Width="800">
     <Window.Resources>
-        <DataTemplate x:Key="templateVersionNotInstalled" DataType="{x:Type local:Foo}">
+        <DataTemplate x:Key="templateVersionNotInstalled" DataType="{x:Type local:Version}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -25,9 +25,10 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
+                <Button x:Name="DownloadButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Install" Command="{Binding InstallCommand}" CommandParameter="{Binding}" />
             </Grid>
         </DataTemplate>
-        <DataTemplate x:Key="templateVersionInstalled" DataType="{x:Type local:Foo}">
+        <DataTemplate x:Key="templateVersionInstalled" DataType="{x:Type local:Version}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -45,9 +46,11 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
+                <Button x:Name="LaunchButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Launch" Command="{Binding LaunchCommand}" CommandParameter="{Binding}" />
+                <Button x:Name="UninstallButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Uninstall" Command="{Binding UninstallCommand}" CommandParameter="{Binding}" />
             </Grid>
         </DataTemplate>
-        <DataTemplate x:Key="templateVersionDownloading" DataType="{x:Type local:Foo}">
+        <DataTemplate x:Key="templateVersionDownloading" DataType="{x:Type local:Version}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -92,18 +95,18 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <Menu Grid.Row="0" IsMainMenu="True" Background="Transparent">
-            <!--<MenuItem Header="_File">
+        <!--<Menu Grid.Row="0" IsMainMenu="True" Background="Transparent">
+            <MenuItem Header="_File">
                 <MenuItem Header="Open log file" Click="MenuItemOpenLogFileClicked" />
                 <MenuItem Header="Open launcher data folder in Explorer" Click="MenuItemOpenDataDirClicked"/>
                 <MenuItem Header="_Import APPX file" Click="ImportButtonClicked" />
-            </MenuItem>-->
-            <!--<MenuItem Header="_Options">
+            </MenuItem>
+            <MenuItem Header="_Options">
                 <MenuItem Header="Delete APPX after download to save space" IsCheckable="True" Name="DeleteAppxAfterDownloadOption" Checked="DeleteAppxAfterDownloadCheck_Changed" Unchecked="DeleteAppxAfterDownloadCheck_Changed" IsChecked="{Binding UserPrefs.DeleteAppxAfterDownload }" />
                 <MenuItem Header="Uninstall all versions" Name="CleanupForMicrosoftStoreReinstall" Click="MenuItemCleanupForMicrosoftStoreReinstallClicked" />
                 <MenuItem Header="Refresh version list" Name="RefreshVersionList" Click="MenuItemRefreshVersionListClicked" />
-            </MenuItem>-->
-        </Menu>
+            </MenuItem>
+        </Menu>-->
         <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
             <TabItem Header="Play">
                 <!--<ContentControl x:Name="ReleaseVersionList" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />-->
