@@ -10,6 +10,11 @@ using System.Xml.Linq;
 
 namespace SmokeyVersionSwitcher
 {
+    class BadUpdateIdentityException : ArgumentException
+    {
+        public BadUpdateIdentityException() : base("Bad updateIdentity") { }
+    }
+
     class Downloader
     {
         private readonly HttpClient client = new HttpClient();
@@ -83,7 +88,7 @@ namespace SmokeyVersionSwitcher
             string link = await GetDownloadUrl(updateIdentity, revisionNumber);
 
             if (link == null)
-                throw new ArgumentException("Bad updateIdentity");
+                throw new BadUpdateIdentityException();
 
             Debug.WriteLine("Resolved download link: " + link);
             await DownloadFile(link, destination, progress, cancellationToken);

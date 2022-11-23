@@ -79,7 +79,7 @@ namespace SmokeyVersionSwitcher
             MessageBox.Show("InvokeLaunch");
             Task.Run(async () =>
             {
-                v.StatusInfo = new Status(State.Launching);
+                v.StatusInfo = new Status(State.Registering);
                 string gameDir = Path.GetFullPath(v.GameDirectory);
                 try
                 {
@@ -93,7 +93,7 @@ namespace SmokeyVersionSwitcher
                     v.StatusInfo = null;
                     return;
                 }
-
+                v.StatusInfo = new Status(State.Launching);
                 try
                 {
                     var pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(minecraft_package_family);
@@ -131,9 +131,29 @@ namespace SmokeyVersionSwitcher
                 {
                     downloader = _userVersionDownloader;
                     if (Interlocked.CompareExchange(ref _userVersionDownloaderLoginTaskStarted, 1, 0) == 0)
+                    {
                         _userVersionDownloaderLoginTask.Start();
-
-                    await _userVersionDownloaderLoginTask;
+                    }
+                    Debug.WriteLine("Waiting for authentication");
+                    try
+                    {
+                        await _userVersionDownloaderLoginTask;
+                        Debug.WriteLine("Authentication complete");
+                    }
+                    catch (WUTokenHelper.WUTokenException e)
+                    {
+                        Debug.WriteLine("Authentication failed:\n" + e.ToString());
+                        MessageBox.Show("Failed to authenticate because: " + e.Message + "\nPlease make sure your account is subscribed to the beta programme.\n\n" + e.ToString(), "Authentication failed");
+                        v.StatusInfo = null;
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine("Authentication failed:\n" + e.ToString());
+                        MessageBox.Show(e.ToString(), "Authentication failed");
+                        v.StatusInfo = null;
+                        return;
+                    }
                 }
 
                 try
@@ -152,6 +172,16 @@ namespace SmokeyVersionSwitcher
                         v.StatusInfo.DownloadedBytes = current;
                     }, cancelSource.Token);
                     Debug.WriteLine("Download complete");
+                }
+                catch (BadUpdateIdentityException)
+                {
+                    Debug.WriteLine("Download failed due to failure to fetch download URL");
+                    MessageBox.Show(
+                        "Unable to fetch download URL for version." +
+                        (v.Type == "Beta" ? "\nFor beta versions, please make sure your account is subscribed to the Minecraft beta programme in the Xbox Insider Hub app." : "")
+                    );
+                    v.StatusInfo = null;
+                    return;
                 }
                 catch (Exception e)
                 {
@@ -388,6 +418,7 @@ namespace SmokeyVersionSwitcher
             Initializing,
             Installing,
             Extracting,
+            Registering,
             Launching,
             Uninstalling
         }
@@ -420,6 +451,7 @@ namespace SmokeyVersionSwitcher
                         case State.Initializing:
                         case State.Extracting:
                         case State.Uninstalling:
+                        case State.Registering:
                         case State.Launching:
                             return true;
                         default: return false;
@@ -446,6 +478,7 @@ namespace SmokeyVersionSwitcher
                         case State.Installing:
                             return "Downloading... " + (DownloadedBytes / 1024 / 1024) + "MiB/" + (TotalBytes / 1024 / 1024) + "MiB";
                         case State.Extracting: return "Extracting...";
+                        case State.Registering: return "Regestering...";
                         case State.Launching: return "Launching...";
                         case State.Uninstalling: return "Uninstalling...";
                         default: return "This shouldn't happen...";
