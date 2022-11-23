@@ -71,9 +71,9 @@
                     </TextBlock.Text>
                 </TextBlock>
                 <Canvas Name="progressSizeHack" Grid.Row="2" Grid.Column="0" Height="12">
-                    <ProgressBar Width="{Binding Path=ActualWidth, ElementName=progressSizeHack, Mode=OneWay}" Height="{Binding Path=ActualHeight, ElementName=progressSizeHack, Mode=OneWay}" Minimum="0" Maximum="{Binding DownloadInfo.TotalSize}" Value="{Binding DownloadInfo.DownloadedBytes}" IsIndeterminate="{Binding DownloadInfo.IsProgressIndeterminate}" />
+                    <ProgressBar Width="{Binding Path=ActualWidth, ElementName=progressSizeHack, Mode=OneWay}" Height="{Binding Path=ActualHeight, ElementName=progressSizeHack, Mode=OneWay}" Minimum="0" Maximum="{Binding StatusInfo.TotalBytes}" Value="{Binding StatusInfo.DownloadedBytes}" IsIndeterminate="{Binding StatusInfo.IsProgressIndeterminate}" />
                 </Canvas>
-                <Button Grid.Row="2" Grid.Column="1" Content="X" Width="20" Margin="10 0 0 0" Command="{Binding DownloadInfo.CancelCommand}" />
+                <Button Grid.Row="2" Grid.Column="1" Content="X" Width="20" Margin="10 0 0 0" Command="{Binding StatusInfo.CancelCommand}" />
             </Grid>
         </DataTemplate>
         <ControlTemplate x:Key="templateVersionList" TargetType="ContentControl">
@@ -86,7 +86,7 @@
                             <DataTrigger Binding="{Binding IsInstalled}" Value="True">
                                 <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionInstalled}"/>
                             </DataTrigger>
-                            <DataTrigger Binding="{Binding IsDownloading}" Value="True">
+                            <DataTrigger Binding="{Binding IsStatusChanging}" Value="True">
                                 <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionDownloading}"/>
                             </DataTrigger>
                         </DataTemplate.Triggers>
