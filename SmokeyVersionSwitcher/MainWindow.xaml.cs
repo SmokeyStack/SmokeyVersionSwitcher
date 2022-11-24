@@ -90,7 +90,6 @@ namespace SmokeyVersionSwitcher
                 return;
 
             _has_launched = true;
-            MessageBox.Show("InvokeLaunch");
             Task.Run(async () =>
             {
                 v.StatusInfo = new Status(State.Registering);
@@ -131,7 +130,6 @@ namespace SmokeyVersionSwitcher
 
         private void InvokeInstall(Version v)
         {
-            MessageBox.Show("InvokeInstall");
             CancellationTokenSource cancelSource = new CancellationTokenSource();
             v.StatusInfo = new Status(State.Initializing)
             {
@@ -237,7 +235,6 @@ namespace SmokeyVersionSwitcher
 
         private void InvokeUninstall(Version v)
         {
-            MessageBox.Show("InvokeUninstall");
             Task.Run(async () => await Remove(v));
         }
 
