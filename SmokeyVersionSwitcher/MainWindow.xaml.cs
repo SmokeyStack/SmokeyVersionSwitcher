@@ -22,8 +22,6 @@ namespace SmokeyVersionSwitcher
     /// </summary>
     public partial class MainWindow : Window, IVersionCommands
     {
-        private static readonly string minecraft_package_family = "Microsoft.MinecraftUWP_8wekyb3d8bbwe";
-
         private readonly VersionList _versions;
         private readonly Downloader _anonVersionDownloader = new Downloader();
         private readonly Downloader _userVersionDownloader = new Downloader();
@@ -99,7 +97,7 @@ namespace SmokeyVersionSwitcher
                 string gameDir = Path.GetFullPath(v.GameDirectory);
                 try
                 {
-                    await ReRegisterPackage(gameDir);
+                    await ReRegisterPackage(v.GamePackageFamily, gameDir);
                 }
                 catch (Exception e)
                 {
@@ -112,7 +110,7 @@ namespace SmokeyVersionSwitcher
                 v.StatusInfo = new Status(State.Launching);
                 try
                 {
-                    var pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(minecraft_package_family);
+                    var pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(v.GamePackageFamily);
                     if (pkg.Count > 0)
                         await pkg[0].LaunchAsync();
                     Debug.WriteLine("App launch finished!");
@@ -135,12 +133,15 @@ namespace SmokeyVersionSwitcher
         {
             MessageBox.Show("InvokeInstall");
             CancellationTokenSource cancelSource = new CancellationTokenSource();
-            v.StatusInfo = new Status(State.Initializing);
+            v.StatusInfo = new Status(State.Initializing)
+            {
+                CancelCommand = new RelayCommand((o) => cancelSource.Cancel())
+            };
             Debug.WriteLine("Download start");
 
             Task.Run(async () =>
             {
-                string dlPath = "Minecraft-" + v.Name + ".Appx";
+                string dlPath = (v.Type == "Preview" ? "Minecraft-Preview-" : "Minecraft-") + v.Name + ".Appx";
                 Downloader downloader = _anonVersionDownloader;
 
                 if (v.Type == "Beta")
@@ -237,13 +238,23 @@ namespace SmokeyVersionSwitcher
         private void InvokeUninstall(Version v)
         {
             MessageBox.Show("InvokeUninstall");
-            Directory.Delete(v.GameDirectory, true);
-            v.UpdateInstallStatus();
+            Task.Run(async () => await Remove(v));
         }
 
-        private async Task ReRegisterPackage(string gameDir)
+        private async Task Remove(Version v)
         {
-            foreach (var pkg in new PackageManager().FindPackages(minecraft_package_family))
+            v.StatusInfo = new Status(State.Uninstalling);
+            await UnregisterPackage(v.GamePackageFamily, Path.GetFullPath(v.GameDirectory));
+            Directory.Delete(v.GameDirectory, true);
+            v.StatusInfo = null;
+            v.UpdateInstallStatus();
+            Debug.WriteLine("Removed release version " + v.Name);
+
+        }
+
+        private async Task ReRegisterPackage(string packageFamily, string gameDir)
+        {
+            foreach (var pkg in new PackageManager().FindPackages(packageFamily))
             {
                 string location = GetPackagePath(pkg);
                 if (location == gameDir)
@@ -251,13 +262,12 @@ namespace SmokeyVersionSwitcher
                     Debug.WriteLine("Skipping package removal - same path: " + pkg.Id.FullName + " " + location);
                     return;
                 }
-                await RemovePackage(pkg);
+                await RemovePackage(pkg, packageFamily);
             }
             Debug.WriteLine("Registering package");
             string manifestPath = Path.Combine(gameDir, "AppxManifest.xml");
             await DeploymentProgressWrapper(new PackageManager().RegisterPackageAsync(new Uri(manifestPath), null, DeploymentOptions.DevelopmentMode));
             Debug.WriteLine("App re-register done!");
-            RestoreMinecraftDataFromReinstall();
         }
 
         private string GetPackagePath(Package pkg)
@@ -272,12 +282,12 @@ namespace SmokeyVersionSwitcher
             }
         }
 
-        private async Task RemovePackage(Package pkg)
+        private async Task RemovePackage(Package pkg, string packageFamily)
         {
             Debug.WriteLine("Removing package: " + pkg.Id.FullName);
             if (!pkg.IsDevelopmentMode)
             {
-                BackupMinecraftDataForRemoval();
+                BackupMinecraftDataForRemoval(packageFamily);
                 await DeploymentProgressWrapper(new PackageManager().RemovePackageAsync(pkg.Id.FullName, 0));
             }
             else
@@ -286,6 +296,18 @@ namespace SmokeyVersionSwitcher
                 await DeploymentProgressWrapper(new PackageManager().RemovePackageAsync(pkg.Id.FullName, RemovalOptions.PreserveApplicationData));
             }
             Debug.WriteLine("Removal of package done: " + pkg.Id.FullName);
+        }
+
+        private async Task UnregisterPackage(string packageFamily, string gameDir)
+        {
+            foreach (var pkg in new PackageManager().FindPackages(packageFamily))
+            {
+                string location = GetPackagePath(pkg);
+                if (location == "" || location == gameDir)
+                {
+                    await RemovePackage(pkg, packageFamily);
+                }
+            }
         }
 
         private async Task DeploymentProgressWrapper(IAsyncOperationWithProgress<DeploymentResult, DeploymentProgress> t)
@@ -318,9 +340,9 @@ namespace SmokeyVersionSwitcher
             return tmpDir;
         }
 
-        private void BackupMinecraftDataForRemoval()
+        private void BackupMinecraftDataForRemoval(string packageFamily)
         {
-            var data = ApplicationDataManager.CreateForPackageFamily(minecraft_package_family);
+            var data = ApplicationDataManager.CreateForPackageFamily(packageFamily);
             string tmpDir = GetBackupMinecraftDataDir();
             if (Directory.Exists(tmpDir))
             {
@@ -334,12 +356,12 @@ namespace SmokeyVersionSwitcher
         }
 
 
-        private void RestoreMinecraftDataFromReinstall()
+        private void RestoreMinecraftDataFromReinstall(string packageFamily)
         {
             string tmpDir = GetBackupMinecraftDataDir();
             if (!Directory.Exists(tmpDir))
                 return;
-            var data = ApplicationDataManager.CreateForPackageFamily(minecraft_package_family);
+            var data = ApplicationDataManager.CreateForPackageFamily(packageFamily);
             Debug.WriteLine("Moving backup Minecraft data to: " + data.LocalFolder.Path);
             RestoreMove(tmpDir, data.LocalFolder.Path);
             Directory.Delete(tmpDir, true);
@@ -373,6 +395,12 @@ namespace SmokeyVersionSwitcher
 
     }
 
+    struct MinecraftPackageFamilies
+    {
+        public static readonly string MINECRAFT = "Microsoft.MinecraftUWP_8wekyb3d8bbwe";
+        public static readonly string MINECRAFT_PREVIEW = "Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe";
+    }
+
     namespace WPFDataTypes
     {
         public class NotifyPropertyChangedBase : INotifyPropertyChanged
@@ -404,12 +432,17 @@ namespace SmokeyVersionSwitcher
                 this.LaunchCommand = commands.LaunchCommand;
                 this.InstallCommand = commands.InstallCommand;
                 this.UninstallCommand = commands.UninstallCommand;
+                this.GameDirectory = (type == "Preview" ? "Minecraft-Preview-" : "Minecraft-") + Name;
             }
 
             public string Name { get; set; }
             public string Type { get; set; }
             public string UUID { get; set; }
-            public string GameDirectory => "Minecraft-" + Name;
+            public string GameDirectory { get; set; }
+            public string GamePackageFamily
+            {
+                get => Type == "Preview" ? MinecraftPackageFamilies.MINECRAFT_PREVIEW : MinecraftPackageFamilies.MINECRAFT;
+            }
             public bool IsInstalled => Directory.Exists(GameDirectory);
             public ICommand LaunchCommand { get; set; }
             public ICommand InstallCommand { get; set; }
