@@ -27,7 +27,7 @@ namespace SmokeyVersionSwitcher
         private readonly Downloader _userVersionDownloader = new Downloader();
         private readonly Task _userVersionDownloaderLoginTask;
         private volatile int _userVersionDownloaderLoginTaskStarted;
-        private volatile bool _has_launched = false;
+        private volatile bool _hasLaunched = false;
 
         public MainWindow()
         {
@@ -35,13 +35,13 @@ namespace SmokeyVersionSwitcher
 
             _versions = new VersionList("versions.json", this);
             VersionList.DataContext = _versions;
+
             _userVersionDownloaderLoginTask = new Task(() =>
             {
                 _userVersionDownloader.EnableUserAuthorization();
             });
+
             Dispatcher.Invoke(LoadVersionList);
-
-
         }
 
         private async void LoadVersionList()
@@ -62,71 +62,25 @@ namespace SmokeyVersionSwitcher
             LoadingProgressGrid.Visibility = Visibility.Collapsed;
         }
 
-        private void MenuItemRefreshVersionListClicked(object sender, RoutedEventArgs e)
-        {
-            Dispatcher.Invoke(LoadVersionList);
-        }
+        private void MenuItemRefreshVersionListClicked(object sender, RoutedEventArgs e) => Dispatcher.Invoke(LoadVersionList);
 
         private void MenuItemOpenLogFileClicked(object sender, RoutedEventArgs e)
         {
             if (!File.Exists(@"Log.txt"))
-                MessageBox.Show("Log file not found", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            {
+                _ = MessageBox.Show("Log file not found", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
             else
-                Process.Start(@"Log.txt");
+            {
+                _ = Process.Start(@"Log.txt");
+            }
         }
 
-        private void MenuItemOpenDataDirClicked(object sender, RoutedEventArgs e)
-        {
-            Process.Start(@"explorer.exe", Directory.GetCurrentDirectory());
-        }
+        private void MenuItemOpenDataDirClicked(object sender, RoutedEventArgs e) => Process.Start(@"explorer.exe", Directory.GetCurrentDirectory());
 
         public ICommand LaunchCommand => new RelayCommand((v) => InvokeLaunch((Version)v));
         public ICommand InstallCommand => new RelayCommand((v) => InvokeInstall((Version)v));
         public ICommand UninstallCommand => new RelayCommand((v) => InvokeUninstall((Version)v));
-
-        private void InvokeLaunch(Version v)
-        {
-            if (_has_launched)
-                return;
-
-            _has_launched = true;
-            Task.Run(async () =>
-            {
-                v.StatusInfo = new Status(State.Registering);
-                string gameDir = Path.GetFullPath(v.GameDirectory);
-                try
-                {
-                    await ReRegisterPackage(v.GamePackageFamily, gameDir);
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("App re-register failed:\n" + e.ToString());
-                    MessageBox.Show("App re-register failed:\n" + e.ToString());
-                    _has_launched = false;
-                    v.StatusInfo = null;
-                    return;
-                }
-                v.StatusInfo = new Status(State.Launching);
-                try
-                {
-                    var pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(v.GamePackageFamily);
-                    if (pkg.Count > 0)
-                        await pkg[0].LaunchAsync();
-                    Debug.WriteLine("App launch finished!");
-                    _has_launched = false;
-                    v.StatusInfo = null;
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("App launch failed:\n" + e.ToString());
-                    MessageBox.Show("App launch failed:\n" + e.ToString());
-                    _has_launched = false;
-                    v.StatusInfo = null;
-                    return;
-                }
-            });
-
-        }
 
         private void InvokeInstall(Version v)
         {
@@ -137,106 +91,109 @@ namespace SmokeyVersionSwitcher
             };
             Debug.WriteLine("Download start");
 
-            Task.Run(async () =>
-            {
-                string dlPath = (v.Type == "Preview" ? "Minecraft-Preview-" : "Minecraft-") + v.Name + ".Appx";
-                Downloader downloader = _anonVersionDownloader;
+            _ = Task.Run(async () =>
+              {
+                  string dlPath = (v.Type == "Preview" ? "Minecraft-Preview-" : "Minecraft-") + v.Name + ".Appx";
+                  Downloader downloader = _anonVersionDownloader;
 
-                if (v.Type == "Beta")
-                {
-                    downloader = _userVersionDownloader;
-                    if (Interlocked.CompareExchange(ref _userVersionDownloaderLoginTaskStarted, 1, 0) == 0)
-                    {
-                        _userVersionDownloaderLoginTask.Start();
-                    }
-                    Debug.WriteLine("Waiting for authentication");
-                    try
-                    {
-                        await _userVersionDownloaderLoginTask;
-                        Debug.WriteLine("Authentication complete");
-                    }
-                    catch (WUTokenHelper.WUTokenException e)
-                    {
-                        Debug.WriteLine("Authentication failed:\n" + e.ToString());
-                        MessageBox.Show("Failed to authenticate because: " + e.Message, "Authentication failed");
-                        v.StatusInfo = null;
-                        return;
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.WriteLine("Authentication failed:\n" + e.ToString());
-                        MessageBox.Show(e.ToString(), "Authentication failed");
-                        v.StatusInfo = null;
-                        return;
-                    }
-                }
+                  if (v.Type == "Beta")
+                  {
+                      downloader = _userVersionDownloader;
+                      if (Interlocked.CompareExchange(ref _userVersionDownloaderLoginTaskStarted, 1, 0) == 0)
+                      {
+                          _userVersionDownloaderLoginTask.Start();
+                      }
+                      Debug.WriteLine("Waiting for authentication");
+                      try
+                      {
+                          await _userVersionDownloaderLoginTask;
+                          Debug.WriteLine("Authentication complete");
+                      }
+                      catch (WUTokenHelper.WUTokenException e)
+                      {
+                          Debug.WriteLine("Authentication failed:\n" + e.ToString());
+                          _ = MessageBox.Show("Failed to authenticate because: " + e.Message, "Authentication failed");
+                          v.StatusInfo = null;
+                          return;
+                      }
+                      catch (Exception e)
+                      {
+                          Debug.WriteLine("Authentication failed:\n" + e.ToString());
+                          _ = MessageBox.Show(e.ToString(), "Authentication failed");
+                          v.StatusInfo = null;
+                          return;
+                      }
+                  }
 
-                try
-                {
-                    await downloader.Download(v.UUID, "1", dlPath, (current, total) =>
-                    {
-                        if (v.StatusInfo.State != State.Installing)
-                        {
-                            Debug.WriteLine("Actual download started");
-                            v.StatusInfo.State = State.Installing;
+                  try
+                  {
+                      await downloader.Download(v.UUID, "1", dlPath, (current, total) =>
+                      {
+                          if (v.StatusInfo.State != State.Installing)
+                          {
+                              Debug.WriteLine("Actual download started");
+                              v.StatusInfo.State = State.Installing;
 
-                            if (total.HasValue)
-                                v.StatusInfo.TotalBytes = total.Value;
-                        }
+                              if (total.HasValue)
+                              {
+                                  v.StatusInfo.TotalBytes = total.Value;
+                              }
+                          }
 
-                        v.StatusInfo.DownloadedBytes = current;
-                    }, cancelSource.Token);
-                    Debug.WriteLine("Download complete");
-                }
-                catch (BadUpdateIdentityException)
-                {
-                    Debug.WriteLine("Download failed due to failure to fetch download URL");
-                    MessageBox.Show(
-                        "Unable to fetch download URL for version." +
-                        (v.Type == "Beta" ? "\nFor beta versions, please make sure your account is subscribed to the Minecraft beta programme in the Xbox Insider Hub app." : "")
-                    );
-                    v.StatusInfo = null;
-                    return;
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("Download failed:\n" + e.ToString());
+                          v.StatusInfo.DownloadedBytes = current;
+                      }, cancelSource.Token);
+                      Debug.WriteLine("Download complete");
+                  }
+                  catch (BadUpdateIdentityException)
+                  {
+                      Debug.WriteLine("Download failed due to failure to fetch download URL");
+                      _ = MessageBox.Show(
+                          "Unable to fetch download URL for version." +
+                          (v.Type == "Beta" ? "\nFor beta versions, please make sure your account is subscribed to the Minecraft beta programme in the Xbox Insider Hub app." : "")
+                      );
+                      v.StatusInfo = null;
+                      return;
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.WriteLine("Download failed:\n" + e.ToString());
 
-                    if (!(e is TaskCanceledException))
-                        MessageBox.Show("Download failed:\n" + e.ToString());
+                      if (!(e is TaskCanceledException))
+                      {
+                          _ = MessageBox.Show("Download failed:\n" + e.ToString());
+                      }
 
-                    v.StatusInfo = null;
-                    return;
-                }
+                      v.StatusInfo = null;
+                      return;
+                  }
 
-                try
-                {
-                    v.StatusInfo.State = State.Extracting;
-                    string dirPath = v.GameDirectory;
+                  try
+                  {
+                      v.StatusInfo.State = State.Extracting;
+                      string dirPath = v.GameDirectory;
 
-                    if (Directory.Exists(dirPath))
-                        Directory.Delete(dirPath, true);
+                      if (Directory.Exists(dirPath))
+                      {
+                          Directory.Delete(dirPath, true);
+                      }
 
-                    ZipFile.ExtractToDirectory(dlPath, dirPath);
-                    v.StatusInfo = null;
-                    File.Delete(Path.Combine(dirPath, "AppxSignature.p7x"));
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("Extraction failed:\n" + e.ToString());
-                    MessageBox.Show("Extraction failed:\n" + e.ToString());
-                    v.StatusInfo = null;
-                    return;
-                }
-                v.StatusInfo = null;
-                v.UpdateInstallStatus();
-            });
+                      ZipFile.ExtractToDirectory(dlPath, dirPath);
+                      v.StatusInfo = null;
+                      File.Delete(Path.Combine(dirPath, "AppxSignature.p7x"));
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.WriteLine("Extraction failed:\n" + e.ToString());
+                      _ = MessageBox.Show("Extraction failed:\n" + e.ToString());
+                      v.StatusInfo = null;
+                      return;
+                  }
+                  v.StatusInfo = null;
+                  v.UpdateInstallStatus();
+              });
         }
 
-        private void InvokeUninstall(Version v)
-        {
-            Task.Run(async () => await Remove(v));
-        }
+        private void InvokeUninstall(Version v) => Task.Run(async () => await Remove(v));
 
         private async Task Remove(Version v)
         {
@@ -246,6 +203,68 @@ namespace SmokeyVersionSwitcher
             v.StatusInfo = null;
             v.UpdateInstallStatus();
             Debug.WriteLine("Removed release version " + v.Name);
+
+        }
+
+        private async Task UnregisterPackage(string packageFamily, string gameDir)
+        {
+            foreach (Package pkg in new PackageManager().FindPackages(packageFamily))
+            {
+                string location = GetPackagePath(pkg);
+                if (location == "" || location == gameDir)
+                {
+                    await RemovePackage(pkg, packageFamily);
+                }
+            }
+        }
+
+        private void InvokeLaunch(Version v)
+        {
+            if (_hasLaunched)
+            {
+                return;
+            }
+
+            _hasLaunched = true;
+            _ = Task.Run(async () =>
+              {
+                  v.StatusInfo = new Status(State.Registering);
+                  string gameDir = Path.GetFullPath(v.GameDirectory);
+                  try
+                  {
+                      await ReRegisterPackage(v.GamePackageFamily, gameDir);
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.WriteLine("App re-register failed:\n" + e.ToString());
+                      _ = MessageBox.Show("App re-register failed:\n" + e.ToString());
+                      _hasLaunched = false;
+                      v.StatusInfo = null;
+                      return;
+                  }
+                  v.StatusInfo = new Status(State.Launching);
+                  try
+                  {
+                      System.Collections.Generic.IList<AppDiagnosticInfo> pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(v.GamePackageFamily);
+
+                      if (pkg.Count > 0)
+                      {
+                          _ = await pkg[0].LaunchAsync();
+                      }
+
+                      Debug.WriteLine("App launch finished!");
+                      _hasLaunched = false;
+                      v.StatusInfo = null;
+                  }
+                  catch (Exception e)
+                  {
+                      Debug.WriteLine("App launch failed:\n" + e.ToString());
+                      _ = MessageBox.Show("App launch failed:\n" + e.ToString());
+                      _hasLaunched = false;
+                      v.StatusInfo = null;
+                      return;
+                  }
+              });
 
         }
 
@@ -261,6 +280,7 @@ namespace SmokeyVersionSwitcher
                 }
                 await RemovePackage(pkg, packageFamily);
             }
+
             Debug.WriteLine("Registering package");
             string manifestPath = Path.Combine(gameDir, "AppxManifest.xml");
             await DeploymentProgressWrapper(new PackageManager().RegisterPackageAsync(new Uri(manifestPath), null, DeploymentOptions.DevelopmentMode));
@@ -295,16 +315,28 @@ namespace SmokeyVersionSwitcher
             Debug.WriteLine("Removal of package done: " + pkg.Id.FullName);
         }
 
-        private async Task UnregisterPackage(string packageFamily, string gameDir)
+        private void BackupMinecraftDataForRemoval(string packageFamily)
         {
-            foreach (var pkg in new PackageManager().FindPackages(packageFamily))
+            Windows.Storage.ApplicationData data = ApplicationDataManager.CreateForPackageFamily(packageFamily);
+            string tmpDir = GetBackupMinecraftDataDir();
+
+            if (Directory.Exists(tmpDir))
             {
-                string location = GetPackagePath(pkg);
-                if (location == "" || location == gameDir)
-                {
-                    await RemovePackage(pkg, packageFamily);
-                }
+                Debug.WriteLine("BackupMinecraftDataForRemoval error: " + tmpDir + " already exists");
+                _ = Process.Start("explorer.exe", tmpDir);
+                _ = MessageBox.Show("The temporary directory for backing up MC data already exists. This probably means that we failed last time backing up the data. Please back the directory up manually.");
+                throw new Exception("Temporary dir exists");
             }
+
+            Debug.WriteLine("Moving Minecraft data to: " + tmpDir);
+            Directory.Move(data.LocalFolder.Path, tmpDir);
+        }
+
+        private string GetBackupMinecraftDataDir()
+        {
+            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            string tmpDir = Path.Combine(localAppData, "TmpMinecraftLocalState");
+            return tmpDir;
         }
 
         private async Task DeploymentProgressWrapper(IAsyncOperationWithProgress<DeploymentResult, DeploymentProgress> t)
@@ -330,35 +362,16 @@ namespace SmokeyVersionSwitcher
             await src.Task;
         }
 
-        private string GetBackupMinecraftDataDir()
-        {
-            string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-            string tmpDir = Path.Combine(localAppData, "TmpMinecraftLocalState");
-            return tmpDir;
-        }
-
-        private void BackupMinecraftDataForRemoval(string packageFamily)
-        {
-            var data = ApplicationDataManager.CreateForPackageFamily(packageFamily);
-            string tmpDir = GetBackupMinecraftDataDir();
-            if (Directory.Exists(tmpDir))
-            {
-                Debug.WriteLine("BackupMinecraftDataForRemoval error: " + tmpDir + " already exists");
-                Process.Start("explorer.exe", tmpDir);
-                MessageBox.Show("The temporary directory for backing up MC data already exists. This probably means that we failed last time backing up the data. Please back the directory up manually.");
-                throw new Exception("Temporary dir exists");
-            }
-            Debug.WriteLine("Moving Minecraft data to: " + tmpDir);
-            Directory.Move(data.LocalFolder.Path, tmpDir);
-        }
-
-
         private void RestoreMinecraftDataFromReinstall(string packageFamily)
         {
             string tmpDir = GetBackupMinecraftDataDir();
+            
             if (!Directory.Exists(tmpDir))
+            {
                 return;
-            var data = ApplicationDataManager.CreateForPackageFamily(packageFamily);
+            }
+
+            Windows.Storage.ApplicationData data = ApplicationDataManager.CreateForPackageFamily(packageFamily);
             Debug.WriteLine("Moving backup Minecraft data to: " + data.LocalFolder.Path);
             RestoreMove(tmpDir, data.LocalFolder.Path);
             Directory.Delete(tmpDir, true);
@@ -366,50 +379,53 @@ namespace SmokeyVersionSwitcher
 
         private void RestoreMove(string from, string to)
         {
-            foreach (var f in Directory.EnumerateFiles(from))
+            foreach (string f in Directory.EnumerateFiles(from))
             {
                 string ft = Path.Combine(to, Path.GetFileName(f));
+
                 if (File.Exists(ft))
                 {
                     if (MessageBox.Show("The file " + ft + " already exists in the destination.\nDo you want to replace it? The old file will be lost otherwise.", "Restoring data directory from previous installation", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+                    {
                         continue;
+                    }
+
                     File.Delete(ft);
                 }
+
                 File.Move(f, ft);
             }
-            foreach (var f in Directory.EnumerateDirectories(from))
+            foreach (string f in Directory.EnumerateDirectories(from))
             {
                 string tp = Path.Combine(to, Path.GetFileName(f));
                 if (!Directory.Exists(tp))
                 {
                     if (File.Exists(tp) && MessageBox.Show("The file " + tp + " is not a directory. Do you want to remove it? The data from the old directory will be lost otherwise.", "Restoring data directory from previous installation", MessageBoxButton.YesNo) != MessageBoxResult.Yes)
+                    {
                         continue;
-                    Directory.CreateDirectory(tp);
+                    }
+
+                    _ = Directory.CreateDirectory(tp);
                 }
+
                 RestoreMove(f, tp);
             }
         }
-
     }
 
     struct MinecraftPackageFamilies
     {
-        public static readonly string MINECRAFT = "Microsoft.MinecraftUWP_8wekyb3d8bbwe";
-        public static readonly string MINECRAFT_PREVIEW = "Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe";
+        public static readonly string Minecraft = "Microsoft.MinecraftUWP_8wekyb3d8bbwe";
+        public static readonly string MinecraftPreview = "Microsoft.MinecraftWindowsBeta_8wekyb3d8bbwe";
     }
 
     namespace WPFDataTypes
     {
         public class NotifyPropertyChangedBase : INotifyPropertyChanged
         {
-
             public event PropertyChangedEventHandler PropertyChanged;
 
-            protected void OnPropertyChanged(string name)
-            {
-                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-            }
-
+            protected void OnPropertyChanged(string name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         public interface IVersionCommands
@@ -436,27 +452,20 @@ namespace SmokeyVersionSwitcher
             public string Type { get; set; }
             public string UUID { get; set; }
             public string GameDirectory { get; set; }
-            public string GamePackageFamily
-            {
-                get => Type == "Preview" ? MinecraftPackageFamilies.MINECRAFT_PREVIEW : MinecraftPackageFamilies.MINECRAFT;
-            }
+            public string GamePackageFamily => Type == "Preview" ? MinecraftPackageFamilies.MinecraftPreview : MinecraftPackageFamilies.Minecraft;
             public bool IsInstalled => Directory.Exists(GameDirectory);
             public ICommand LaunchCommand { get; set; }
             public ICommand InstallCommand { get; set; }
             public ICommand UninstallCommand { get; set; }
-            private Status _status_info;
+            private Status _statusInfo;
             public Status StatusInfo
             {
-                get { return _status_info; }
-                set { _status_info = value; OnPropertyChanged("StatusInfo"); OnPropertyChanged("IsStatusChanging"); }
+                get => _statusInfo;
+                set { _statusInfo = value; OnPropertyChanged("StatusInfo"); OnPropertyChanged("IsStatusChanging"); }
             }
             public bool IsStatusChanging => StatusInfo != null;
 
-            public void UpdateInstallStatus()
-            {
-                OnPropertyChanged("IsInstalled");
-            }
-
+            public void UpdateInstallStatus() => OnPropertyChanged("IsInstalled");
         }
 
         public enum State
@@ -472,15 +481,15 @@ namespace SmokeyVersionSwitcher
         public class Status : NotifyPropertyChangedBase
         {
             private State _state;
-            private long _downloaded_bytes;
-            private long _total_bytes;
+            private long _downloadedBytes;
+            private long _totalBytes;
             public Status(State state)
             {
                 _state = state;
             }
             public State State
             {
-                get { return _state; }
+                get => _state;
                 set
                 {
                     _state = value;
@@ -506,13 +515,13 @@ namespace SmokeyVersionSwitcher
             }
             public long DownloadedBytes
             {
-                get { return _downloaded_bytes; }
-                set { _downloaded_bytes = value; OnPropertyChanged("DownloadedBytes"); OnPropertyChanged("DisplayStatus"); }
+                get { return _downloadedBytes; }
+                set { _downloadedBytes = value; OnPropertyChanged("DownloadedBytes"); OnPropertyChanged("DisplayStatus"); }
             }
             public long TotalBytes
             {
-                get { return _total_bytes; }
-                set { _total_bytes = value; OnPropertyChanged("TotalBytes"); OnPropertyChanged("DisplayStatus"); }
+                get { return _totalBytes; }
+                set { _totalBytes = value; OnPropertyChanged("TotalBytes"); OnPropertyChanged("DisplayStatus"); }
             }
             public string DisplayStatus
             {
