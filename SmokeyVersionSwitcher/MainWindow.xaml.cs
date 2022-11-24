@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -38,19 +37,36 @@ namespace SmokeyVersionSwitcher
 
             _versions = new VersionList("versions.json", this);
             VersionList.DataContext = _versions;
-            Dispatcher.Invoke(async () =>
+            _userVersionDownloaderLoginTask = new Task(() =>
             {
-                try
-                {
-                    await _versions.LoadFromCache();
-                }
-                catch (Exception e)
-                {
-                    Debug.WriteLine("List cache load failed:\n" + e.ToString());
-                }
+                _userVersionDownloader.EnableUserAuthorization();
             });
+            Dispatcher.Invoke(LoadVersionList);
 
 
+        }
+
+        private async void LoadVersionList()
+        {
+            LoadingProgressLabel.Content = "Loading versions from cache";
+            LoadingProgressBar.Value = 1;
+            LoadingProgressGrid.Visibility = Visibility.Visible;
+
+            try
+            {
+                await _versions.LoadFromCache();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("List cache load failed:\n" + e.ToString());
+            }
+
+            LoadingProgressGrid.Visibility = Visibility.Collapsed;
+        }
+
+        private void MenuItemRefreshVersionListClicked(object sender, RoutedEventArgs e)
+        {
+            Dispatcher.Invoke(LoadVersionList);
         }
 
         private void MenuItemOpenLogFileClicked(object sender, RoutedEventArgs e)
