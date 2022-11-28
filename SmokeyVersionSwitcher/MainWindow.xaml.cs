@@ -6,16 +6,21 @@ using System.Windows.Input;
 namespace SmokeyVersionSwitcher
 {
     using System.ComponentModel;
+    using System.Collections.ObjectModel;
     using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Threading;
+    using System.Windows.Data;
     using Windows.ApplicationModel;
     using Windows.Foundation;
     using Windows.Management.Core;
     using Windows.Management.Deployment;
     using Windows.System;
     using WPFDataTypes;
+
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -29,12 +34,37 @@ namespace SmokeyVersionSwitcher
         private volatile int _userVersionDownloaderLoginTaskStarted;
         private volatile bool _hasLaunched = false;
 
+        private ObservableCollection<string> _testList = new ObservableCollection<string> { "test1", "test2" };
+        private ObservableCollection<Version> _newList = new ObservableCollection<Version> { };
+        public ObservableCollection<Version> TestList
+        {
+            get
+            {
+                return _versions;
+            }
+        }
+
         public MainWindow()
         {
             InitializeComponent();
 
+            JArray jArray = JsonConvert.DeserializeObject<JArray>(File.ReadAllText("versions.json"));
+            _newList.Clear();
+
+            //foreach (JObject keys in jArray)
+            //    _newList.Add(new Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], this));
+
+            _newList.Add(new Version("1.19.60.20", "Preview", "700d26f6-d1e0-499f-8574-1367b731820e", this));
+            _newList.Add(new Version("1.19.61.20", "Preview", "710d26f6-d1e0-499f-8574-1367b731820e", this));
+
+
             _versions = new VersionList("versions.json", this);
             VersionList.DataContext = _versions;
+
+            DirectoryInfo obj = new DirectoryInfo(".");
+            DirectoryInfo[] folders = obj.GetDirectories();
+
+            ReleaseVersionList.DataContext = _newList;
 
             _userVersionDownloaderLoginTask = new Task(() =>
             {
@@ -81,6 +111,20 @@ namespace SmokeyVersionSwitcher
         public ICommand LaunchCommand => new RelayCommand((v) => InvokeLaunch((Version)v));
         public ICommand InstallCommand => new RelayCommand((v) => InvokeInstall((Version)v));
         public ICommand UninstallCommand => new RelayCommand((v) => InvokeUninstall((Version)v));
+
+        private void Test(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                //Version v = ReleaseVersionList.DataContext.GetType().Name;
+                MessageBox.Show(ReleaseVersionList.ItemsSource.GetType().Name);
+            }
+            catch (Exception es)
+            {
+
+                MessageBox.Show(es.ToString());
+            }
+        }
 
         private void InvokeInstall(Version v)
         {
@@ -365,7 +409,7 @@ namespace SmokeyVersionSwitcher
         private void RestoreMinecraftDataFromReinstall(string packageFamily)
         {
             string tmpDir = GetBackupMinecraftDataDir();
-            
+
             if (!Directory.Exists(tmpDir))
             {
                 return;

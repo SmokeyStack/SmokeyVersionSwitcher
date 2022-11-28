@@ -77,12 +77,30 @@
                 <Button Grid.Row="2" Grid.Column="1" Content="X" Width="20" Margin="10 0 0 0" Command="{Binding StatusInfo.CancelCommand}" />
             </Grid>
         </DataTemplate>
+        <DataTemplate x:Key="TesttemplateVersionInstalled" DataType="{x:Type local:Version}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="Bold">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="{}{0} ({1})">
+                            <Binding Path="Name"/>
+                            <Binding Path="Type"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </Grid>
+        </DataTemplate>
         <ControlTemplate x:Key="templateVersionList" TargetType="ContentControl">
             <ListBox ItemsSource="{Binding}" HorizontalContentAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <ContentControl x:Name="control" Content="{Binding}" ContentTemplate="{StaticResource templateVersionNotInstalled}" Background="LightBlue"/>
-
                         <DataTemplate.Triggers>
                             <DataTrigger Binding="{Binding IsInstalled}" Value="True">
                                 <Setter TargetName="control" Property="ContentTemplate" Value="{StaticResource templateVersionInstalled}"/>
@@ -94,6 +112,26 @@
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
+        </ControlTemplate>
+        <ControlTemplate x:Key="testTemplate" TargetType="ContentControl">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
+                <ComboBox ItemsSource="{Binding}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <ContentControl x:Name="control" Content="{Binding}" ContentTemplate="{StaticResource TesttemplateVersionInstalled}" Background="LightBlue"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button x:Name="DownloadButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Install" Click="Test" />
+            </Grid>
         </ControlTemplate>
     </Window.Resources>
     <Grid>
@@ -113,15 +151,15 @@
         </Menu>
         <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
             <TabItem Header="Play">
-                <!--<ContentControl x:Name="ReleaseVersionList" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />-->
+                <Grid>
+                    <ComboBox x:Name="ReleaseVersionList" ItemsSource="{Binding}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="50,0"/>
+                    <Button Content="Button" Height="75" Width="200" Click="Test" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="50,0"/>
+                </Grid>
             </TabItem>
             <TabItem Header="Installations">
                 <ContentControl x:Name="VersionList" Template="{StaticResource templateVersionList}" Margin="5" />
             </TabItem>
         </TabControl>
-
-
-
         <Grid Grid.Row="2" VerticalAlignment="Center" Margin="5,5,5,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
