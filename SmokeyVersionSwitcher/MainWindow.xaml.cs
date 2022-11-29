@@ -11,7 +11,6 @@ namespace SmokeyVersionSwitcher
     using System.IO;
     using System.IO.Compression;
     using System.Threading;
-    using System.Windows.Data;
     using Windows.ApplicationModel;
     using Windows.Foundation;
     using Windows.Management.Core;
@@ -27,38 +26,52 @@ namespace SmokeyVersionSwitcher
     /// </summary>
     public partial class MainWindow : Window, IVersionCommands
     {
+        private static readonly string VERSIONDB = "https://raw.githubusercontent.com/SmokeyStack/versiondb/main/versions.json";
+
         private readonly VersionList _versions;
         private readonly Downloader _anonVersionDownloader = new Downloader();
         private readonly Downloader _userVersionDownloader = new Downloader();
         private readonly Task _userVersionDownloaderLoginTask;
         private volatile int _userVersionDownloaderLoginTaskStarted;
         private volatile bool _hasLaunched = false;
-        private ObservableCollection<Version> _newList = new ObservableCollection<Version> { };
+        private readonly ObservableCollection<Version> _installedVersions = new ObservableCollection<Version> { };
 
         public MainWindow()
         {
             InitializeComponent();
 
             JArray jArray = JsonConvert.DeserializeObject<JArray>(File.ReadAllText("versions.json"));
-            _newList.Clear();
+            _installedVersions.Clear();
+            foreach (JObject keys in jArray)
+            {
+                Version v = new Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], this);
+                if (v.IsInstalled)
+                {
+                    _installedVersions.Add(new Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], this));
+                }
+            }
 
-            //foreach (JObject keys in jArray)
-            //    _newList.Add(new Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], this));
-
-            _newList.Add(new Version("1.19.60.20", "Preview", "700d26f6-d1e0-499f-8574-1367b731820e", this));
-            _newList.Add(new Version("1.19.61.20", "Preview", "710d26f6-d1e0-499f-8574-1367b731820e", this));
-
-
-            _versions = new VersionList("versions.json", this);
-            VersionList.DataContext = _versions;
-
-            InstalledList.DataContext = _newList;
+            InstalledList.DataContext = _installedVersions;
             InstalledList.SelectedIndex = 0;
+
+            _versions = new VersionList("versions.json", VERSIONDB, this);
+            VersionList.DataContext = _versions;
 
             _userVersionDownloaderLoginTask = new Task(() =>
             {
                 _userVersionDownloader.EnableUserAuthorization();
             });
+
+            try
+            {
+                TextTest.DataContext = "Whooo";
+
+            }
+            catch (Exception wha)
+            {
+                Debug.WriteLine(wha.ToString());
+                throw;
+            }
 
             Dispatcher.Invoke(LoadVersionList);
         }
@@ -76,6 +89,19 @@ namespace SmokeyVersionSwitcher
             catch (Exception e)
             {
                 Debug.WriteLine("List cache load failed:\n" + e.ToString());
+            }
+
+            LoadingProgressLabel.Content = "Updating versions list from " + VERSIONDB;
+            LoadingProgressBar.Value = 2;
+
+            try
+            {
+                await _versions.DownloadList();
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("List download failed:\n" + e.ToString());
+                MessageBox.Show("Failed to update version list from the internet. Some new versions might be missing.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
 
             LoadingProgressGrid.Visibility = Visibility.Collapsed;
@@ -104,6 +130,7 @@ namespace SmokeyVersionSwitcher
         private void Test(object sender, RoutedEventArgs e)
         {
             Version v = (Version)InstalledList.SelectedItem;
+            TextTest.DataContext = "Llaunch";
             if (_hasLaunched)
             {
                 return;
@@ -249,6 +276,7 @@ namespace SmokeyVersionSwitcher
                       ZipFile.ExtractToDirectory(dlPath, dirPath);
                       v.StatusInfo = null;
                       File.Delete(Path.Combine(dirPath, "AppxSignature.p7x"));
+                      _installedVersions.Add(v);
                   }
                   catch (Exception e)
                   {
@@ -602,7 +630,7 @@ namespace SmokeyVersionSwitcher
                         case State.Installing:
                             return "Downloading... " + (DownloadedBytes / 1024 / 1024) + "MiB/" + (TotalBytes / 1024 / 1024) + "MiB";
                         case State.Extracting: return "Extracting...";
-                        case State.Registering: return "Regestering...";
+                        case State.Registering: return "Registering...";
                         case State.Launching: return "Launching...";
                         case State.Uninstalling: return "Uninstalling...";
                         default: return "This shouldn't happen...";

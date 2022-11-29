@@ -113,8 +113,9 @@
         <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
             <TabItem Header="Play">
                 <Grid>
-                    <ComboBox x:Name="InstalledList" ItemsSource="{Binding}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="50,0" Grid.ColumnSpan="2"/>
-                    <Button Content="Play" Height="75" Width="200" Click="Test" HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Column="1"/>
+                    <ComboBox x:Name="InstalledList" ItemsSource="{Binding}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="50,0"/>
+                    <Button Content="Play" Height="75" Width="200" Click="Test" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TextTest" Text="{Binding}" Margin="50,0" Width="200" Height="50" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="18" TextAlignment="Center" />
                 </Grid>
             </TabItem>
             <TabItem Header="Installations">
