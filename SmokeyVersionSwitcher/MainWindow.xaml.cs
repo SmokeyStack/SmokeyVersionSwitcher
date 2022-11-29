@@ -33,16 +33,7 @@ namespace SmokeyVersionSwitcher
         private readonly Task _userVersionDownloaderLoginTask;
         private volatile int _userVersionDownloaderLoginTaskStarted;
         private volatile bool _hasLaunched = false;
-
-        private ObservableCollection<string> _testList = new ObservableCollection<string> { "test1", "test2" };
         private ObservableCollection<Version> _newList = new ObservableCollection<Version> { };
-        public ObservableCollection<Version> TestList
-        {
-            get
-            {
-                return _versions;
-            }
-        }
 
         public MainWindow()
         {
@@ -61,10 +52,8 @@ namespace SmokeyVersionSwitcher
             _versions = new VersionList("versions.json", this);
             VersionList.DataContext = _versions;
 
-            DirectoryInfo obj = new DirectoryInfo(".");
-            DirectoryInfo[] folders = obj.GetDirectories();
-
-            ReleaseVersionList.DataContext = _newList;
+            InstalledList.DataContext = _newList;
+            InstalledList.SelectedIndex = 0;
 
             _userVersionDownloaderLoginTask = new Task(() =>
             {
@@ -114,16 +103,52 @@ namespace SmokeyVersionSwitcher
 
         private void Test(object sender, RoutedEventArgs e)
         {
-            try
+            Version v = (Version)InstalledList.SelectedItem;
+            if (_hasLaunched)
             {
-                //Version v = ReleaseVersionList.DataContext.GetType().Name;
-                MessageBox.Show(ReleaseVersionList.ItemsSource.GetType().Name);
+                return;
             }
-            catch (Exception es)
-            {
 
-                MessageBox.Show(es.ToString());
-            }
+            _hasLaunched = true;
+            _ = Task.Run(async () =>
+            {
+                v.StatusInfo = new Status(State.Registering);
+                string gameDir = Path.GetFullPath(v.GameDirectory);
+                try
+                {
+                    await ReRegisterPackage(v.GamePackageFamily, gameDir);
+                }
+                catch (Exception ee)
+                {
+                    Debug.WriteLine("App re-register failed:\n" + ee.ToString());
+                    _ = MessageBox.Show("App re-register failed:\n" + ee.ToString());
+                    _hasLaunched = false;
+                    v.StatusInfo = null;
+                    return;
+                }
+                v.StatusInfo = new Status(State.Launching);
+                try
+                {
+                    System.Collections.Generic.IList<AppDiagnosticInfo> pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(v.GamePackageFamily);
+
+                    if (pkg.Count > 0)
+                    {
+                        _ = await pkg[0].LaunchAsync();
+                    }
+
+                    Debug.WriteLine("App launch finished!");
+                    _hasLaunched = false;
+                    v.StatusInfo = null;
+                }
+                catch (Exception eee)
+                {
+                    Debug.WriteLine("App launch failed:\n" + eee.ToString());
+                    _ = MessageBox.Show("App launch failed:\n" + eee.ToString());
+                    _hasLaunched = false;
+                    v.StatusInfo = null;
+                    return;
+                }
+            });
         }
 
         private void InvokeInstall(Version v)
