@@ -25,14 +25,13 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <Button x:Name="DownloadButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Install" Command="{Binding InstallCommand}" CommandParameter="{Binding}" />
+                <Button x:Name="DownloadButton" Height="20" Width="100" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Install" Command="{Binding InstallCommand}" CommandParameter="{Binding}" />
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="templateVersionInstalled" DataType="{x:Type local:Version}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
@@ -47,8 +46,7 @@
                         </MultiBinding>
                     </TextBlock.Text>
                 </TextBlock>
-                <Button x:Name="UninstallButton" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Uninstall" Command="{Binding UninstallCommand}" CommandParameter="{Binding}" />
-                <Button x:Name="DownloadButton" Grid.Row="0" Grid.Column="2" Grid.RowSpan="2" Padding="20,0" Content="Launch" Command="{Binding LaunchCommand}" CommandParameter="{Binding}" />
+                <Button x:Name="UninstallButton" Height="20" Width="100" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" Padding="20,0" Content="Uninstall" Command="{Binding UninstallCommand}" CommandParameter="{Binding}" />
             </Grid>
         </DataTemplate>
         <DataTemplate x:Key="templateVersionDownloading" DataType="{x:Type local:Version}">
@@ -113,9 +111,9 @@
         <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
             <TabItem Header="Play">
                 <Grid>
-                    <ComboBox x:Name="InstalledList" ItemsSource="{Binding}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="50,0"/>
-                    <Button Content="Play" Height="75" Width="200" Click="Test" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TextTest" Text="{Binding}" Margin="50,0" Width="200" Height="50" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="18" TextAlignment="Center" />
+                    <ComboBox x:Name="InstalledList" ItemsSource="{Binding}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="25,0"/>
+                    <Button Content="Play" Height="75" Width="300" Click="Test" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TextTest" Text="{Binding}" Margin="25,0" Width="200" Height="50" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="18" TextAlignment="Center" />
                 </Grid>
             </TabItem>
             <TabItem Header="Installations">
@@ -128,14 +126,14 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <!--<CheckBox Grid.Row="0" Grid.Column="0" Name="ShowInstalledVersionsOnlyCheckbox" Content="Show installed versions only" Checked="ShowInstalledVersionsOnlyCheckbox_Changed" Unchecked="ShowInstalledVersionsOnlyCheckbox_Changed" IsChecked="{Binding UserPrefs.ShowInstalledOnly }" />-->
+            <Label Grid.Row="0" Grid.Column="0" Name="VersionLoadingProgressLabel" Content="" Padding="0,0,0,0"/>
             <Grid Name="LoadingProgressGrid" Grid.Row="0" Grid.Column="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Name="LoadingProgressLabel" Content="Nothing" Padding="0,0,0,0"/>
-                <ProgressBar Grid.Row="0" Grid.Column="1" Name="LoadingProgressBar" Width="100" Margin="5,0,0,0" Maximum="3" Value="2"/>
+                <ProgressBar Grid.Row="0" Grid.Column="1" Name="LoadingProgressBar" Width="100" Margin="5,0,0,0" Maximum="2" Value="0"/>
             </Grid>
         </Grid>
     </Grid>

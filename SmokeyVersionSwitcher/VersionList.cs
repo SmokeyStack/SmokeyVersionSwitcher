@@ -45,20 +45,11 @@ namespace SmokeyVersionSwitcher
 
         public async Task DownloadList()
         {
-            var resp = await _client.GetAsync(_versiondb);
-            resp.EnsureSuccessStatusCode();
-            var data = await resp.Content.ReadAsStringAsync();
+            HttpResponseMessage resp = await _client.GetAsync(_versiondb);
+            _ = resp.EnsureSuccessStatusCode();
+            string data = await resp.Content.ReadAsStringAsync();
             File.WriteAllText(_cache_file, data);
-            MessageBox.Show(JArray.Parse(data).ToString());
-            try
-            {
-                ParseList(JArray.Parse(data));
-            }
-            catch (System.Exception e)
-            {
-                MessageBox.Show(e.ToString());
-                throw;
-            }
+            ParseList(JArray.Parse(data));
         }
     }
 }

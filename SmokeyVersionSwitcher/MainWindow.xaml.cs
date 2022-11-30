@@ -40,23 +40,13 @@ namespace SmokeyVersionSwitcher
         {
             InitializeComponent();
 
-            JArray jArray = JsonConvert.DeserializeObject<JArray>(File.ReadAllText("versions.json"));
-            _installedVersions.Clear();
-            foreach (JObject keys in jArray)
-            {
-                Version v = new Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], this);
-                if (v.IsInstalled)
-                {
-                    _installedVersions.Add(new Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], this));
-                }
-            }
-
             InstalledList.DataContext = _installedVersions;
             InstalledList.SelectedIndex = 0;
 
             _versions = new VersionList("versions.json", VERSIONDB, this);
             VersionList.DataContext = _versions;
 
+            Debug.WriteLine("UwU");
             _userVersionDownloaderLoginTask = new Task(() =>
             {
                 _userVersionDownloader.EnableUserAuthorization();
@@ -65,15 +55,32 @@ namespace SmokeyVersionSwitcher
             try
             {
                 TextTest.DataContext = "Whooo";
-
             }
-            catch (Exception wha)
+            catch (Exception e)
             {
-                Debug.WriteLine(wha.ToString());
-                throw;
+                Debug.WriteLine(e.ToString());
             }
 
             Dispatcher.Invoke(LoadVersionList);
+
+            foreach (Version v in _versions)
+            {
+                if (v.IsInstalled)
+                {
+                    _installedVersions.Add(v);
+                }
+            }
+        }
+
+        private void UpdateStatus(Version v)
+        {
+            if (v.StatusInfo == null)
+            {
+                VersionLoadingProgressLabel.Content = "";
+                return;
+            }
+
+            VersionLoadingProgressLabel.Content = v.StatusInfo.DisplayStatus;
         }
 
         private async void LoadVersionList()
@@ -130,7 +137,7 @@ namespace SmokeyVersionSwitcher
         private void Test(object sender, RoutedEventArgs e)
         {
             Version v = (Version)InstalledList.SelectedItem;
-            TextTest.DataContext = "Llaunch";
+
             if (_hasLaunched)
             {
                 return;
@@ -140,7 +147,9 @@ namespace SmokeyVersionSwitcher
             _ = Task.Run(async () =>
             {
                 v.StatusInfo = new Status(State.Registering);
+                Dispatcher.Invoke(new Action(() => UpdateStatus(v)));
                 string gameDir = Path.GetFullPath(v.GameDirectory);
+
                 try
                 {
                     await ReRegisterPackage(v.GamePackageFamily, gameDir);
@@ -151,9 +160,13 @@ namespace SmokeyVersionSwitcher
                     _ = MessageBox.Show("App re-register failed:\n" + ee.ToString());
                     _hasLaunched = false;
                     v.StatusInfo = null;
+                    Dispatcher.Invoke(new Action(() => UpdateStatus(v)));
                     return;
                 }
+
                 v.StatusInfo = new Status(State.Launching);
+                Dispatcher.Invoke(new Action(() => UpdateStatus(v)));
+
                 try
                 {
                     System.Collections.Generic.IList<AppDiagnosticInfo> pkg = await AppDiagnosticInfo.RequestInfoForPackageAsync(v.GamePackageFamily);
@@ -166,6 +179,7 @@ namespace SmokeyVersionSwitcher
                     Debug.WriteLine("App launch finished!");
                     _hasLaunched = false;
                     v.StatusInfo = null;
+                    Dispatcher.Invoke(new Action(() => UpdateStatus(v)));
                 }
                 catch (Exception eee)
                 {
@@ -173,6 +187,7 @@ namespace SmokeyVersionSwitcher
                     _ = MessageBox.Show("App launch failed:\n" + eee.ToString());
                     _hasLaunched = false;
                     v.StatusInfo = null;
+                    Dispatcher.Invoke(new Action(() => UpdateStatus(v)));
                     return;
                 }
             });
