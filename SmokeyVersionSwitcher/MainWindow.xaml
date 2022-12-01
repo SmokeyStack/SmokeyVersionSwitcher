@@ -112,7 +112,7 @@
             <TabItem Header="Play">
                 <Grid>
                     <ComboBox x:Name="InstalledList" ItemsSource="{Binding}" DisplayMemberPath="Name" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="25,0"/>
-                    <Button Content="Play" Height="75" Width="300" Click="Test" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Button Content="Play" Height="75" Width="300" Click="Launch" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     <TextBlock x:Name="TextTest" Text="{Binding}" Margin="25,0" Width="200" Height="50" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="18" TextAlignment="Center" />
                 </Grid>
             </TabItem>

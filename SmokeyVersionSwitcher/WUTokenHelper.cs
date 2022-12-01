@@ -6,22 +6,27 @@ namespace SmokeyVersionSwitcher
 {
     class WUTokenHelper
     {
-
         public static string GetWUToken()
         {
             try
             {
                 int status = GetWUToken(out string token);
+
                 if (status >= WU_ERRORS_START && status <= WU_ERRORS_END)
+                {
                     throw new WUTokenException(status);
+                }
                 else if (status != 0)
+                {
                     Marshal.ThrowExceptionForHR(status);
+                }
+
                 return token;
             }
             catch (SEHException e)
             {
                 Marshal.ThrowExceptionForHR(e.HResult);
-                return ""; //ghey
+                return "";
             }
         }
 
@@ -42,17 +47,19 @@ namespace SmokeyVersionSwitcher
             {
                 HResult = exception;
             }
-            private static String GetExceptionText(int e)
+            private static string GetExceptionText(int e)
             {
                 if (e >= WU_TOKEN_FETCH_ERROR_BASE && e < WU_TOKEN_FETCH_ERROR_END)
                 {
-                    var actualCode = (byte)e & 0xff;
+                    int actualCode = (byte)e & 0xff;
 
                     if (!Enum.IsDefined(typeof(WebTokenRequestStatus), e))
                     {
                         return $"WUTokenHelper returned bogus HRESULT: {e} (THIS IS A BUG)";
                     }
-                    var status = (WebTokenRequestStatus)Enum.ToObject(typeof(WebTokenRequestStatus), actualCode);
+
+                    WebTokenRequestStatus status = (WebTokenRequestStatus)Enum.ToObject(typeof(WebTokenRequestStatus), actualCode);
+
                     switch (status)
                     {
                         case WebTokenRequestStatus.Success:
@@ -67,8 +74,11 @@ namespace SmokeyVersionSwitcher
                             return "Xbox Live account services are currently unavailable";
                         case WebTokenRequestStatus.ProviderError:
                             return "Unknown Xbox Live error";
+                        default:
+                            break;
                     }
                 }
+                
                 switch (e)
                 {
                     case WU_NO_ACCOUNT: return "No Microsoft account found";

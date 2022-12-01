@@ -11,8 +11,8 @@ namespace SmokeyVersionSwitcher
     /// </summary>
     public class RelayCommand : ICommand
     {
-        readonly Action<object> _execute;
-        readonly Predicate<object> _canExecute;
+        private readonly Action<object> _execute;
+        private readonly Predicate<object> _canExecute;
 
         /// <summary>
         /// Creates a new command that can always execute.
