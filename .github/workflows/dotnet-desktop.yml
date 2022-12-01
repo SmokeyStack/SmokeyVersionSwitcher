@@ -25,10 +25,15 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{env.DOTNET_VERSION}}
+          
+      - name: Install dependencies
+        run: dotnet restore
 
       - name: Build solution
         working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: dotnet publish -c ${{env.BUILD_CONFIG}} /p:Platform=${{env.BUILD_PLATFORM}} -r win-x64 --no-self-contained
+        run: |
+          dotnet build -c Release --no-restore
+          dotnet publish -c ${{env.BUILD_CONFIG}} /p:Platform=${{env.BUILD_PLATFORM}} -r win-x64 --no-self-contained
         
       - name: SmokeyVersionSwitcher
         uses: actions/upload-artifact@v2
