@@ -28,7 +28,7 @@ jobs:
 
       - name: Build solution
         working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: dotnet publish -c ${{env.BUILD_CONFIGURATION}} /p:Platform=${{env.BUILD_PLATFORM}} -r win-x64 --no-self-contained
+        run: dotnet publish -c ${{env.BUILD_CONFIG}} /p:Platform=${{env.BUILD_PLATFORM}} -r win-x64 --no-self-contained
         
       - name: SmokeyVersionSwitcher
         uses: actions/upload-artifact@v2
