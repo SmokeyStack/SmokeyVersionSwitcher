@@ -280,6 +280,7 @@ namespace SmokeyVersionSwitcher
                       ZipFile.ExtractToDirectory(dlPath, dirPath);
                       version.StatusInfo = null;
                       File.Delete(Path.Combine(dirPath, "AppxSignature.p7x"));
+                      File.Delete(dlPath);
                       _installedVersions.Add(version);
                   }
                   catch (Exception e)
