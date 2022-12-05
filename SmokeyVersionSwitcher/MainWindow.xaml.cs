@@ -281,7 +281,10 @@ namespace SmokeyVersionSwitcher
                       version.StatusInfo = null;
                       File.Delete(Path.Combine(dirPath, "AppxSignature.p7x"));
                       File.Delete(dlPath);
-                      _installedVersions.Add(version);
+                      Application.Current.Dispatcher.Invoke(delegate
+                      {
+                          _installedVersions.Add(version);
+                      });
                   }
                   catch (Exception e)
                   {
