@@ -567,11 +567,6 @@ namespace SmokeyVersionSwitcher
                 {
                     switch (_state)
                     {
-                        case State.Initializing:
-                        case State.Extracting:
-                        case State.Installing:
-                        case State.Uninstalling:
-                        case State.Registering:
                         case State.Launching:
                             return true;
                         default: return false;
