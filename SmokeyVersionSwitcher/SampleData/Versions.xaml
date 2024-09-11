@@ -1,0 +1,4 @@
+<local:SampleVersionList xmlns:local="clr-namespace:SmokeyVersionSwitcher.SampleData">
+    <local:SampleVersion DisplayName="1.9.0.15" IsBeta="False" IsInstalled="False" DisplayInstallStatus="Not installed"/>
+    <local:SampleVersion DisplayName="1.10.0.4" IsBeta="True" IsInstalled="True" DisplayInstallStatus="Installed"/>
+</local:SampleVersionList>

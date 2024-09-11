@@ -93,13 +93,7 @@ namespace SmokeyVersionSwitcher
 
         public async Task Download(string updateIdentity, string revisionNumber, string destination, DownloadProgress progress, CancellationToken cancellationToken)
         {
-            string link = await GetDownloadUrl(updateIdentity, revisionNumber);
-
-            if (link == null)
-            {
-                throw new BadUpdateIdentityException();
-            }
-
+            string link = await GetDownloadUrl(updateIdentity, revisionNumber) ?? throw new BadUpdateIdentityException();
             Debug.WriteLine("Resolved download link: " + link);
             await DownloadFile(link, destination, progress, cancellationToken);
         }

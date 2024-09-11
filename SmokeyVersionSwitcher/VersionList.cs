@@ -1,7 +1,9 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -13,21 +15,45 @@ namespace SmokeyVersionSwitcher
         private readonly string _versiondb;
         private readonly HttpClient _client = new HttpClient();
         private readonly WPFDataTypes.IVersionCommands _commands;
+        private readonly PropertyChangedEventHandler _versionPropertyChangedEventHandler;
 
-        public VersionList(string cache_file, string versiondb, WPFDataTypes.IVersionCommands commands)
+        public VersionList(string cacheFile, string versiondb, WPFDataTypes.IVersionCommands commands, PropertyChangedEventHandler versionPropertyChangedEventHandler)
         {
-            _cacheFile = cache_file;
+            _cacheFile = cacheFile;
             _versiondb = versiondb;
             _commands = commands;
+            _versionPropertyChangedEventHandler = versionPropertyChangedEventHandler;
+            CollectionChanged += VersionListOnCollectionChanged;
         }
 
-        private void ParseList(JArray data)
+        private void VersionListOnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (var item in e.OldItems)
+                {
+                    var version = item as WPFDataTypes.Version;
+                    version.PropertyChanged -= _versionPropertyChangedEventHandler;
+                }
+            }
+            if (e.NewItems != null)
+            {
+                foreach (var item in e.NewItems)
+                {
+                    var version = item as WPFDataTypes.Version;
+                    version.PropertyChanged += _versionPropertyChangedEventHandler;
+                }
+            }
+        }
+
+        private void ParseList(JArray data, bool isCache)
         {
             Clear();
 
-            foreach (JObject keys in data)
+            foreach (JObject keys in data.Cast<JObject>())
             {
-                Add(new WPFDataTypes.Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], _commands));
+                bool isNew = !isCache;
+                Add(new WPFDataTypes.Version((string)keys["Name"], (string)keys["Type"], (string)keys["UUID"], _commands, isNew));
             }
         }
 
@@ -35,8 +61,11 @@ namespace SmokeyVersionSwitcher
         {
             try
             {
-                JArray jArray = JsonConvert.DeserializeObject<JArray>(File.ReadAllText(_cacheFile));
-                ParseList(jArray);
+                using (StreamReader reader = File.OpenText(_cacheFile))
+                {
+                    string data = await reader.ReadToEndAsync();
+                    ParseList(JArray.Parse(data), true);
+                }
             }
             catch (FileNotFoundException)
             { // ignore
@@ -46,10 +75,10 @@ namespace SmokeyVersionSwitcher
         public async Task DownloadList()
         {
             HttpResponseMessage resp = await _client.GetAsync(_versiondb);
-            _ = resp.EnsureSuccessStatusCode();
+            resp.EnsureSuccessStatusCode();
             string data = await resp.Content.ReadAsStringAsync();
             File.WriteAllText(_cacheFile, data);
-            ParseList(JArray.Parse(data));
+            ParseList(JArray.Parse(data), false);
         }
     }
 }

@@ -7,6 +7,10 @@
         mc:Ignorable="d"
         Title="SmokeyStack's Version Switcher" Height="800" Width="800">
     <Window.Resources>
+        <CollectionViewSource x:Key="versionListRelease" IsLiveFilteringRequested="True" />
+        <CollectionViewSource x:Key="versionListBeta" IsLiveFilteringRequested="True" />
+        <CollectionViewSource x:Key="versionListPreview" IsLiveFilteringRequested="True" />
+        <CollectionViewSource x:Key="versionListInstalled" IsLiveFilteringRequested="True" />
         <DataTemplate x:Key="templateVersionNotInstalled" DataType="{x:Type local:Version}">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -102,7 +106,7 @@
         <Menu Grid.Row="0" IsMainMenu="True" Background="Transparent">
             <MenuItem Header="_File">
                 <MenuItem Header="Open log file" Click="MenuItemOpenLogFileClicked" />
-                <MenuItem Header="Open launcher data folder in Explorer" Click="MenuItemOpenDataDirClicked"/>
+                <MenuItem Header="Open launcher data folder in Explorer" Click="MenuItemOpenDataDirectoryClicked"/>
             </MenuItem>
             <MenuItem Header="_Options">
                 <MenuItem Header="Refresh version list" Name="RefreshVersionList" Click="MenuItemRefreshVersionListClicked" />
@@ -111,7 +115,7 @@
         <TabControl Grid.Row="1" Margin="0,5,0,0" BorderThickness="0,1,0,0" Padding="0" Width="Auto">
             <TabItem Header="Play">
                 <Grid>
-                    <ComboBox x:Name="InstalledList" ItemsSource="{Binding}" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="25,0">
+                    <ComboBox x:Name="VersionListInstalled" ItemsSource="{Binding}" Width="200" HorizontalAlignment="Left" Height="50" VerticalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="25,0">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock>
@@ -125,12 +129,18 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Content="Play" Height="75" Width="300" Click="Launch" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Button Content="Play" Height="75" Width="300" Click="InvokeLaunch" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     <TextBlock x:Name="TextTest" Text="{Binding}" Margin="25,0" Width="200" Height="50" VerticalAlignment="Center" HorizontalAlignment="Right" FontSize="18" TextAlignment="Center" />
                 </Grid>
             </TabItem>
-            <TabItem Header="Installations">
-                <ContentControl x:Name="VersionList" Template="{StaticResource templateVersionList}" Margin="5" />
+            <TabItem Header="Release">
+                <ContentControl x:Name="VersionListRelease" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />
+            </TabItem>
+            <TabItem Header="Beta">
+                <ContentControl x:Name="VersionListBeta" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />
+            </TabItem>
+            <TabItem Header="Preview">
+                <ContentControl x:Name="VersionListPreview" d:DataContext="{d:DesignData /SampleData/Versions.xaml}" Template="{StaticResource templateVersionList}" Margin="5" />
             </TabItem>
         </TabControl>
         <Grid Grid.Row="2" VerticalAlignment="Center" Margin="5,5,5,10">
@@ -139,7 +149,7 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" Name="VersionLoadingProgressLabel" Content="" Padding="0,0,0,0"/>
+            <CheckBox Grid.Row="0" Grid.Column="0" Name="ShowInstalledVersionsCheckbox" Content="Show Installed Versions Only" Checked="ShowInstalledVersionsCheckboxChanged" Unchecked="ShowInstalledVersionsCheckboxChanged" IsChecked="{Binding UserPreferences.ShowInstalledVersions }" />
             <Grid Name="LoadingProgressGrid" Grid.Row="0" Grid.Column="2">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
